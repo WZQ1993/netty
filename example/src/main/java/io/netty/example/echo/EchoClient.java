@@ -43,6 +43,7 @@ public final class EchoClient {
 
     public static void main(String[] args) throws Exception {
         // Configure SSL.git
+        // ssl的一般配置
         final SslContext sslCtx;
         if (SSL) {
             sslCtx = SslContextBuilder.forClient()
@@ -56,6 +57,7 @@ public final class EchoClient {
         try {
             Bootstrap b = new Bootstrap();
             b.group(group)
+                    // 确定channel的类型
              .channel(NioSocketChannel.class)
              .option(ChannelOption.TCP_NODELAY, true)
              .handler(new ChannelInitializer<SocketChannel>() {

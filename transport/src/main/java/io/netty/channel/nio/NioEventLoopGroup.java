@@ -120,7 +120,7 @@ public class NioEventLoopGroup extends MultithreadEventLoopGroup {
             ((NioEventLoop) e).rebuildSelector();
         }
     }
-
+    // 实例化NioEventLoop
     @Override
     protected EventLoop newChild(Executor executor, Object... args) throws Exception {
         return new NioEventLoop(this, executor, (SelectorProvider) args[0],

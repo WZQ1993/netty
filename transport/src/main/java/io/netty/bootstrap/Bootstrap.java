@@ -140,7 +140,7 @@ public class Bootstrap extends AbstractBootstrap<Bootstrap, Channel> {
         if (remoteAddress == null) {
             throw new NullPointerException("remoteAddress");
         }
-
+        // 连接前的参数检查
         validate();
         return doResolveAndConnect(remoteAddress, config.localAddress());
     }
@@ -192,7 +192,7 @@ public class Bootstrap extends AbstractBootstrap<Bootstrap, Channel> {
             return promise;
         }
     }
-
+    // socket连接
     private ChannelFuture doResolveAndConnect0(final Channel channel, SocketAddress remoteAddress,
                                                final SocketAddress localAddress, final ChannelPromise promise) {
         try {

@@ -49,15 +49,21 @@ public final class EchoServer {
         }
 
         // Configure the server.
+        // 只处理连接请求
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
+        // 处理各个客户端的IO操作
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         final EchoServerHandler serverHandler = new EchoServerHandler();
         try {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
+                    // 确定channel的类型、通过工厂生成channel实例
+                    // 区别于client，实例化的时候，传参是SelectionKey.OP_ACCEPT
              .channel(NioServerSocketChannel.class)
              .option(ChannelOption.SO_BACKLOG, 100)
+                    // 添加到bossGroup
              .handler(new LoggingHandler(LogLevel.INFO))
+                    // 添加到workerGroup
              .childHandler(new ChannelInitializer<SocketChannel>() {
                  @Override
                  public void initChannel(SocketChannel ch) throws Exception {

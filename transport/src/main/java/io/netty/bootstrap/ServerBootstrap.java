@@ -136,7 +136,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         this.childHandler = childHandler;
         return this;
     }
-
+    // 关联 workerGroup 和 channel
     @Override
     void init(Channel channel) throws Exception {
         final Map<ChannelOption<?>, Object> options = options0();
@@ -252,6 +252,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
             }
 
             try {
+                // 将channel从 bossGroup 移交到 workGroup
                 childGroup.register(child).addListener(new ChannelFutureListener() {
                     @Override
                     public void operationComplete(ChannelFuture future) throws Exception {

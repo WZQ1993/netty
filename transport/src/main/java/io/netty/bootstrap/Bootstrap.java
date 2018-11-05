@@ -262,6 +262,7 @@ public class Bootstrap extends AbstractBootstrap<Bootstrap, Channel> {
     @SuppressWarnings("unchecked")
     void init(Channel channel) throws Exception {
         ChannelPipeline p = channel.pipeline();
+        // 在这里将channelINitializer添加到pipelIne
         p.addLast(config.handler());
 
         final Map<ChannelOption<?>, Object> options = options0();

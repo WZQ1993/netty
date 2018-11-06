@@ -43,6 +43,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
+ * 代表一个独立的线程，一个EventLoop在其生命周期之间，与一个线程绑定
  * Abstract base class for {@link OrderedEventExecutor}'s that execute all its submitted tasks in a single thread.
  *
  */
@@ -80,7 +81,8 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                     SingleThreadEventExecutor.class, ThreadProperties.class, "threadProperties");
 
     private final Queue<Runnable> taskQueue;
-
+    // 线程是唯一的，一个EventLoop只对应一个线程
+    // 在startThread触发点新建线程
     private volatile Thread thread;
     @SuppressWarnings("unused")
     private volatile ThreadProperties threadProperties;
@@ -110,7 +112,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
      * @param parent            the {@link EventExecutorGroup} which is the parent of this instance and belongs to it
      * @param threadFactory     the {@link ThreadFactory} which will be used for the used {@link Thread}
      * @param addTaskWakesUp    {@code true} if and only if invocation of {@link #addTask(Runnable)} will wake up the
-     *                          executor thread
+     *                          executor
      */
     protected SingleThreadEventExecutor(
             EventExecutorGroup parent, ThreadFactory threadFactory, boolean addTaskWakesUp) {
@@ -269,7 +271,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             }
         }
     }
-
+    //
     private boolean fetchFromScheduledTaskQueue() {
         long nanoTime = AbstractScheduledEventExecutor.nanoTime();
         Runnable scheduledTask  = pollScheduledTask(nanoTime);
@@ -342,7 +344,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
     /**
      * Poll all tasks from the task queue and run them via {@link Runnable#run()} method.
-     *
+     * 执行任务队列的任务
      * @return {@code true} if and only if at least one task was run
      */
     protected boolean runAllTasks() {
@@ -351,7 +353,9 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         boolean ranAtLeastOne = false;
 
         do {
+            // 从ScheduledTaskQueue中拿出到达限定时间的可执行任务，放到taskQueue中
             fetchedAll = fetchFromScheduledTaskQueue();
+            // 执行所有任务
             if (runAllTasksFrom(taskQueue)) {
                 ranAtLeastOne = true;
             }
@@ -767,7 +771,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
         return isTerminated();
     }
-
+    // 添加任务，往任务列表添加，执行任务只有一个线程
     @Override
     public void execute(Runnable task) {
         if (task == null) {
@@ -867,7 +871,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     // ScheduledExecutorService implementation
 
     private static final long SCHEDULE_PURGE_INTERVAL = TimeUnit.SECONDS.toNanos(1);
-
+    // eventLoop执行方法
     private void startThread() {
         if (state == ST_NOT_STARTED) {
             if (STATE_UPDATER.compareAndSet(this, ST_NOT_STARTED, ST_STARTED)) {

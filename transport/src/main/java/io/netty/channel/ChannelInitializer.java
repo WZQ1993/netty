@@ -113,8 +113,7 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
     @SuppressWarnings("unchecked")
     private boolean initChannel(ChannelHandlerContext ctx) throws Exception {
         /**
-         * TODO
-         * head - this - tail (初始？)
+         * head - this - tail (Bootstrap.init())
          * head - this - handler - tail (add handler)
          * head - handler - tail (remove this)
          */

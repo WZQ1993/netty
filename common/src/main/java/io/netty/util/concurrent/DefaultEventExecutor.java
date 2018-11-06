@@ -57,7 +57,7 @@ public final class DefaultEventExecutor extends SingleThreadEventExecutor {
                                 RejectedExecutionHandler rejectedExecutionHandler) {
         super(parent, executor, true, maxPendingTasks, rejectedExecutionHandler);
     }
-
+    // EventLoop 的线程执行这个方法，不断从任务队列中领取任务执行
     @Override
     protected void run() {
         for (;;) {

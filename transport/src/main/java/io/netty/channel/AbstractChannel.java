@@ -457,6 +457,8 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             return remoteAddress0();
         }
 
+        // 每个 Channel 都有且仅有一个 EventLoop 与之关联
+        // eventLoopGroup 通过next()方法拿出一个EventLoop，在这里关联到channel
         @Override
         public final void register(EventLoop eventLoop, final ChannelPromise promise) {
             if (eventLoop == null) {

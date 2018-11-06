@@ -262,7 +262,9 @@ public class Bootstrap extends AbstractBootstrap<Bootstrap, Channel> {
     @SuppressWarnings("unchecked")
     void init(Channel channel) throws Exception {
         ChannelPipeline p = channel.pipeline();
-        // 在这里将channelINitializer添加到pipelIne
+        // 1. 将channelInitializer添加到pipelIne
+        // inbound = true
+        // 2. io.netty.channel.AbstractChannel.AbstractUnsafe.register0将channelInitializer中的自定义handler添加到channel中
         p.addLast(config.handler());
 
         final Map<ChannelOption<?>, Object> options = options0();

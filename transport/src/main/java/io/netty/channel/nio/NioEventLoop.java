@@ -397,6 +397,9 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         }
     }
 
+    /**
+     * EventLoop 任务循环方法
+     */
     @Override
     protected void run() {
         for (;;) {
@@ -409,6 +412,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                         // fall-through to SELECT since the busy-wait is not supported with NIO
 
                     case SelectStrategy.SELECT:
+                        // select 是否有事件就绪
                         select(wakenUp.getAndSet(false));
 
                         // 'wakenUp.compareAndSet(false, true)' is always evaluated
@@ -448,6 +452,8 @@ public final class NioEventLoop extends SingleThreadEventLoop {
 
                 cancelledKeys = 0;
                 needsToSelectAgain = false;
+                // 这个字段是设置IO事件和任务事件执行的百分比
+                // EventLoop中包含两种任务，一个是IO事件，一个是TaskQueue中的任务事件
                 final int ioRatio = this.ioRatio;
                 if (ioRatio == 100) {
                     try {
@@ -457,11 +463,13 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                         runAllTasks();
                     }
                 } else {
+                    // 非100，先执行IO事件，记录IO事件执行的时间
                     final long ioStartTime = System.nanoTime();
                     try {
                         processSelectedKeys();
                     } finally {
                         // Ensure we always run tasks.
+                        // 计算任务执行所需要的时间
                         final long ioTime = System.nanoTime() - ioStartTime;
                         runAllTasks(ioTime * (100 - ioRatio) / ioRatio);
                     }
@@ -558,6 +566,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
 
             if (needsToSelectAgain) {
                 selectAgain();
+                // TODO selectedKeys 的赋值是否在这里
                 selectedKeys = selector.selectedKeys();
 
                 // Create the iterator again to avoid ConcurrentModificationException
@@ -569,14 +578,14 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             }
         }
     }
-
+    // 该方法处理IO事件
     private void processSelectedKeysOptimized() {
         for (int i = 0; i < selectedKeys.size; ++i) {
             final SelectionKey k = selectedKeys.keys[i];
             // null out entry in the array to allow to have it GC'ed once the Channel close
             // See https://github.com/netty/netty/issues/2363
             selectedKeys.keys[i] = null;
-
+            // 这里获取到的是绑定的channel
             final Object a = k.attachment();
 
             if (a instanceof AbstractNioChannel) {
@@ -625,26 +634,35 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         try {
             int readyOps = k.readyOps();
             // We first need to call finishConnect() before try to trigger a read(...) or write(...) as otherwise
-            // the NIO JDK channel implementation may throw a NotYetConnectedException.
+            // the NIO JDK channel implementation may throw a NotYetConnectedException
+            // 建立连接事件
             if ((readyOps & SelectionKey.OP_CONNECT) != 0) {
                 // remove OP_CONNECT as otherwise Selector.select(..) will always return without blocking
                 // See https://github.com/netty/netty/issues/924
                 int ops = k.interestOps();
                 ops &= ~SelectionKey.OP_CONNECT;
                 k.interestOps(ops);
-
+                /**
+                 * 1. 正如代码中的注释所言, 我们需要将 OP_CONNECT 从就绪事件集中清除, 不然会一直有 OP_CONNECT 事件.
+                 * 2. 调用 unsafe.finishConnect() 通知上层连接已建立
+                 */
                 unsafe.finishConnect();
             }
-
+            // 可写事件
             // Process OP_WRITE first as we may be able to write some queued buffers and so free memory.
             if ((readyOps & SelectionKey.OP_WRITE) != 0) {
                 // Call forceFlush which will also take care of clear the OP_WRITE once there is nothing left to write
                 ch.unsafe().forceFlush();
             }
-
+            // 可读事件
             // Also check for readOps of 0 to workaround possible JDK bug which may otherwise lead
             // to a spin loop
             if ((readyOps & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0 || readyOps == 0) {
+                /**
+                 * 1. 分配 ByteBuf
+                 * 2. 从 SocketChannel 中读取数据
+                 * 3. 调用 pipeline.fireChannelRead 发送一个 inbound 事件.
+                 */
                 unsafe.read();
             }
         } catch (CancelledKeyException ignored) {
